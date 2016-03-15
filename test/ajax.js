@@ -125,28 +125,24 @@ describe('Backbone.NativeAjax', function() {
         xhr = options.originalXhr;
       });
 
-      it('should resolve the deferred on complete', function(done) {
-        req.then(function(resp) {
-          expect(resp).to.deep.equal({id: 1});
-          done()
-        }).catch(function(err) {
-          throw new Error('Should not have been called');
-        });
-
+      it('should resolve the deferred on complete', function() {
         // specific to mock-xhr
         xhr.receive(200, {id: 1});
+
+        return req.then(function(resp) {
+          expect(resp).to.deep.equal({id: 1});
+        });
       });
 
-      it('should reject the deferred on error', function(done) {
-        req.then(function() {
+      it('should reject the deferred on error', function() {
+        // specific to mock-xhr
+        xhr.err();
+
+        return req.then(function() {
           throw new Error('Should not have been called');
         }).catch(function(err) {
           expect(err).to.equal(xhr);
-          done();
-        })
-
-        // specific to mock-xhr
-        xhr.err();
+        });
       });
 
     });
@@ -163,31 +159,30 @@ describe('Backbone.NativeAjax', function() {
         var success = sinon.stub().throws(reason), error = sinon.mock();
         var options = {url: 'test', success: success, error: error};
 
-        ajax(options).then(function() {
-          throw new Error('Should not have been called');
-        }).catch(function(e) {
-          // e.should.equal(req);
-          // console.log("ERR CAUGHT", e);
-          // done();
-        });
-
+        var req = ajax(options);
         var xhr = options.originalXhr;
         xhr.receive(200, {id: 1});
+
+        return req.then(function() {
+          throw new Error('Should not have been called');
+        }).catch(function(e) {
+          expect(e).to.equal(reason);
+        });
       });
 
       it('should reject the deferred if error callback throws error', function(/* done */) {
         var success = sinon.mock(), error = sinon.stub().throws(reason);
         var options = {url: 'test', success: success, error: error};
 
-        ajax(options).then(function() {
-          throw new Error('Should not have been called');
-        }).catch(function(e) {
-          // e.should.equal(req);
-          // done();
-        });
-
+        var req = ajax(options);
         var xhr = options.originalXhr;
         xhr.err();
+
+        return req.then(function() {
+          throw new Error('Should not have been called');
+        }).catch(function(e) {
+          expect(e).to.equal(reason);
+        });
       });
 
     });
